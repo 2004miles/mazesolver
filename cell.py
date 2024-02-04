@@ -11,9 +11,18 @@ class Cell:
         self._x2 = None
         self._y1 = None
         self._y2 = None
+        #win location
+        self._position = []
+        #2d array location
+        self._location = []
         self._win = win
         self.visited = False
 
+        # A*
+        self.g = 0
+        self.h = 0
+        self.f = 0
+        self.parent = None
 
     def draw(self, x1, y1, x2, y2, color="black"):
         if self._win is None:
@@ -40,7 +49,7 @@ class Cell:
             line = Line(start, end)
             self._win.draw_line(line, line_color)
 
-    def draw_move(self, to_cell, undo=False):
+    def draw_move(self, to_cell, style=None):
         if self._win is None:
             return
         x_mid = (self._x1 + self._x2) / 2
@@ -50,8 +59,11 @@ class Cell:
         to_y_mid = (to_cell._y1 + to_cell._y2) / 2
 
         fill_color = "red"
-        if undo:
+        if style == 'undo':
             fill_color = "gray"
+        if style == 'search':
+            fill_color = 'blue'
+        
 
         # moving left
         if self._x1 > to_cell._x1:

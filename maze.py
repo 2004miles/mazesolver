@@ -40,10 +40,100 @@ class Maze():
                 adjacent_indices.append((ni, nj))
         return adjacent_indices
 
+    def _solve_astar(self, i, j):
+        # Each cell represents a node
+
+        self._cells[i][j].visited = True
+        if i == (self._num_cols -1) and j == (self._num_rows - 1):
+            return True
+        start = self._cells[0][0]
+        end = self._cells[self._num_cols-1][self._num_rows-1]
+        start.g = start.f = start.h = 0
+        end.g = end.f = end.h = 0
+
+        open_list = [start]
+        closed_list = []
+
+        while open_list:
+            current_cell = min(open_list, key=lambda cell: cell.f)
+            open_list.remove(current_cell)
+            # Update and visualize estimated path at each step
+
+            if current_cell == end:
+                # Found the goal, reconstruct and visualize the final path
+                return self.reconstruct_and_visualize_path(current_cell, None)
+            closed_list.append(current_cell)
+            successors = []
+            for ni, nj in self._get_adjacent_cells(current_cell._location[0], current_cell._location[1]):
+                if not self._cells[ni][nj].visited or self._cells[ni][nj] in closed_list:
+
+                    if ni == current_cell._location[0] + 1 and not self._cells[current_cell._location[0]][current_cell._location[1]].has_right_wall and not self._cells[current_cell._location[0]+1][current_cell._location[1]].has_left_wall:
+                        successors.append(self._cells[ni][nj])
+                    if ni == current_cell._location[0] - 1 and not self._cells[current_cell._location[0]][current_cell._location[1]].has_left_wall and not self._cells[current_cell._location[0]-1][current_cell._location[1]].has_right_wall:
+                        successors.append(self._cells[ni][nj])
+                    if nj == current_cell._location[1] + 1 and not self._cells[current_cell._location[0]][current_cell._location[1]].has_bottom_wall and not self._cells[current_cell._location[0]][current_cell._location[1]+1].has_top_wall:
+                        successors.append(self._cells[ni][nj])
+                    if nj == current_cell._location[1] - 1 and not self._cells[current_cell._location[0]][current_cell._location[1]].has_top_wall and not self._cells[current_cell._location[0]][current_cell._location[1]-1].has_bottom_wall:
+                        successors.append(self._cells[ni][nj])
+
+            # Loop through successors
+            for successor in successors:
+                # Skip successors that are not viable
+                if successor in closed_list or successor.visited:
+                    continue
+
+                # Create the f, g, and h values
+                successor.g = current_cell.g + 1
+                successor.h = abs(successor._position[0] - end._position[0]) + abs(successor._position[1] - end._position[1])
+                successor.f = successor.g + successor.h
+                successor.parent = current_cell
+                successor.visited = True
+
+                # Add the child to the open list
+                if self.add_to_open(open_list, successor):
+                    open_list.append(successor)
+                    self._animate()
+                    self.visualize_estimated_path(successor, 'search')
+
+    def add_to_open(self, open_list, successor):
+        for node in open_list:
+            if successor == node and successor.f >= node.f:
+                return False
+        return True
+
+    def reconstruct_and_visualize_path(self, end_cell, style):
+        path = []
+        current = end_cell
+        while current is not None:
+            path.insert(0, current)
+            current = current.parent
+
+        # Visualize the path
+        for i in range(len(path) - 1):
+            self._animate()
+            path[i].draw_move(path[i+1], style)
+
+        return path
+
+    def visualize_estimated_path(self, current_node, style):
+        self._animate()
+        # This method should directly visualize the path
+        temp_path = [current_node]
+        while current_node.parent:
+            current_node = current_node.parent
+            temp_path.append(current_node)
+        # No need to check if start_node is in temp_path since we're tracing back to start
+
+        temp_path.reverse()  # Ensure the path is from start to current_node
+
+        # Directly visualize the path
+        for i in range(len(temp_path) - 1):
+            temp_path[i].draw_move(temp_path[i+1], style)
+
     def _solve_r(self, i, j):
         self._animate()
         self._cells[i][j].visited = True
-        if i == (self._num_cols -1) and j == (self._num_rows -1):
+        if i == (self._num_cols -1) and j == (self._num_rows - 1):
             return True
 
         for ni, nj in self._get_adjacent_cells(i, j):
@@ -55,7 +145,7 @@ class Maze():
                     if self._solve_r(ni, nj):
                         return True
                     self._animate()
-                    self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+                    self._cells[i][j].draw_move(self._cells[ni][nj], 'undo')
 
                 if ni == i - 1 and not self._cells[i][j].has_left_wall and not self._cells[i-1][j].has_right_wall:
                     self._animate()
@@ -63,7 +153,7 @@ class Maze():
                     if self._solve_r(ni, nj):
                         return True
                     self._animate()
-                    self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+                    self._cells[i][j].draw_move(self._cells[ni][nj], 'undo')
 
                 if nj == j + 1 and not self._cells[i][j].has_bottom_wall and not self._cells[i][j+1].has_top_wall:
                     self._animate()
@@ -71,7 +161,7 @@ class Maze():
                     if self._solve_r(ni, nj):
                         return True
                     self._animate()
-                    self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+                    self._cells[i][j].draw_move(self._cells[ni][nj], 'undo')
 
                 if nj == j - 1 and not self._cells[i][j].has_top_wall and not self._cells[i][j-1].has_bottom_wall:
                     self._animate()
@@ -79,12 +169,13 @@ class Maze():
                     if self._solve_r(ni, nj):
                         return True
                     self._animate()
-                    self._cells[i][j].draw_move(self._cells[ni][nj], undo=True)
+                    self._cells[i][j].draw_move(self._cells[ni][nj], 'undo')
 
         return False
 
+    
     def solve(self):
-        return self._solve_r(0, 0)
+        return self._solve_astar(0, 0)
 
     def _reset_cells_visited(self):
         for i in range(self._num_cols):
@@ -106,7 +197,7 @@ class Maze():
 
             next_i, next_j = random.choice(possible_directions)
 
-            #right
+            # right
             if next_i == i + 1:
                 self._cells[i][j].has_right_wall = False
                 self._cells[i + 1][j].has_left_wall = False
@@ -140,14 +231,20 @@ class Maze():
                 self._create_cell_location(i, j)
 
     def _create_cell_location(self, i, j):
-        #creates cell location at midpoint
+        # creates cell location
         self._cells[i][j]._x1 = self._x1 + i * self._cell_size_x
         self._cells[i][j]._y1 = self._y1 + j * self._cell_size_y
         self._cells[i][j]._x2 = self._cells[i][j]._x1 + self._cell_size_x
         self._cells[i][j]._y2 = self._cells[i][j]._y1 + self._cell_size_y
 
+        x1 = (self._cells[i][j]._x1 + self._cells[i][j]._x2)/2
+        y1 = (self._cells[i][j]._y1 + self._cells[i][j]._y2)/2
         
- 
+        self._cells[i][j]._position.append(x1)
+        self._cells[i][j]._position.append(y1)
+        self._cells[i][j]._location.append(i)
+        self._cells[i][j]._location.append(j)
+
 
     def _draw_cell(self, i, j, color="black"):
         if self._win is None:
