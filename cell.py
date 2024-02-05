@@ -62,8 +62,7 @@ class Cell:
         if style == 'undo':
             fill_color = "gray"
         if style == 'search':
-            fill_color = 'blue'
-        
+            fill_color = 'blue' 
 
         # moving left
         if self._x1 > to_cell._x1:

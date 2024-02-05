@@ -8,6 +8,7 @@ class Maze():
     def __init__(self, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y,
                  win=None, seed=None):
 
+        self.root = self
         self._x1 = x1
         self._y1 = y1
         self._num_rows = num_rows
@@ -18,9 +19,8 @@ class Maze():
         self._win = win
         self._create_cells()
         self._break_entrance_and_exit()
-        self.seed = seed
-        if seed is not None:
-            self.seed = random.seed(seed)
+        self.seed = seed if seed is not None else random.randint(0, 10000)  # Generate a seed if not provided
+        random.seed(self.seed)  # Initialize the RNG with the seed 
         self._break_walls_r(0, 0)
         self._reset_cells_visited()
 
@@ -55,6 +55,7 @@ class Maze():
         closed_list = []
 
         while open_list:
+
             current_cell = min(open_list, key=lambda cell: cell.f)
             open_list.remove(current_cell)
             # Update and visualize estimated path at each step
@@ -78,8 +79,8 @@ class Maze():
 
             # Loop through successors
             for successor in successors:
-                # Skip successors that are not viable
-                if successor in closed_list or successor.visited:
+
+                if successor.visited:
                     continue
 
                 # Create the f, g, and h values
@@ -93,7 +94,8 @@ class Maze():
                 if self.add_to_open(open_list, successor):
                     open_list.append(successor)
                     self._animate()
-                    self.visualize_estimated_path(successor, 'search')
+                    successor.draw_move(successor.parent, 'search')
+           
 
     def add_to_open(self, open_list, successor):
         for node in open_list:
@@ -114,22 +116,7 @@ class Maze():
             path[i].draw_move(path[i+1], style)
 
         return path
-
-    def visualize_estimated_path(self, current_node, style):
-        self._animate()
-        # This method should directly visualize the path
-        temp_path = [current_node]
-        while current_node.parent:
-            current_node = current_node.parent
-            temp_path.append(current_node)
-        # No need to check if start_node is in temp_path since we're tracing back to start
-
-        temp_path.reverse()  # Ensure the path is from start to current_node
-
-        # Directly visualize the path
-        for i in range(len(temp_path) - 1):
-            temp_path[i].draw_move(temp_path[i+1], style)
-
+ 
     def _solve_r(self, i, j):
         self._animate()
         self._cells[i][j].visited = True
@@ -173,7 +160,6 @@ class Maze():
 
         return False
 
-    
     def solve(self):
         return self._solve_astar(0, 0)
 
@@ -193,7 +179,7 @@ class Maze():
 
             if not possible_directions:
                 self._draw_cell(i, j)
-                return
+                break
 
             next_i, next_j = random.choice(possible_directions)
 
@@ -217,7 +203,7 @@ class Maze():
             self._draw_cell(next_i, next_j)
             self._draw_cell(i, j)
             self._break_walls_r(next_i, next_j)
-
+  
     def _create_cells(self):
         for i in range(self._num_cols):
             col_cells = []
@@ -260,4 +246,4 @@ class Maze():
         if self._win is None:
             return
         self._win.redraw()
-        time.sleep(0.05)
+        time.sleep(0.02)
