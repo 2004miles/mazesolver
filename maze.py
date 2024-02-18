@@ -94,8 +94,9 @@ class Maze():
                 if self.add_to_open(open_list, successor):
                     open_list.append(successor)
                     self._animate()
+                    self._animate()
                     successor.draw_move(successor.parent, 'search')
-           
+
 
     def add_to_open(self, open_list, successor):
         for node in open_list:
@@ -246,4 +247,4 @@ class Maze():
         if self._win is None:
             return
         self._win.redraw()
-        time.sleep(0.02)
+        time.sleep(0.05)

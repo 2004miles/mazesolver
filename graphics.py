@@ -9,6 +9,7 @@ class Window(Tk):
         self.__canvas = Canvas(self, bg="white", height=height, width=width)
         self.__canvas.pack(fill=BOTH, expand=1)
         self.__running = False
+        self.bind("q", self.close)
 
     def redraw(self):
         #self.update_idletasks()
@@ -23,7 +24,7 @@ class Window(Tk):
     def draw_line(self, line, fill_color="black"):
         line.draw(self.__canvas, fill_color)
 
-    def close(self):
+    def close(self, event=None):
         self.__running = False
         self.destroy()
 
